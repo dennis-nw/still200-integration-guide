@@ -70,9 +70,10 @@ from typing import Dict, Any
 
 router = APIRouter()
 
-class CheckResult(BaseModel):
-    status: str
+class CheckResult(TypedDict):
+    status: Literal["healthy", "degraded", "unhealthy", "failure"]
     latency_ms: float
+    error: NotRequired[str]
 
 class HealthCheckResponse(BaseModel):
     service_name: str
@@ -89,8 +90,8 @@ async def health(
     async with asyncio.TaskGroup() as tg:
         db_check = tg.create_task(check_db(db=db))
         redis_check = tg.create_task(check_redis(redis_client=redis_client))
-        
-    # Results are safely available after the context manager exits
+
+    # check methods return a dict with status and latency_ms
     checks = {
         "database": db_check.result(), 
         "redis": redis_check.result()
