@@ -26,8 +26,37 @@ and code samples to help you get your endpoints monitored quickly.
     https://api.still200.com/monitors/validate
     ```
 
-    If there's an issue with the validation, the `error` field in the response
-    will give details on what was wrong.
+    **Example Success Response**
+
+    ```json
+    {
+      "service_name": "Healthy API",
+      "checks": {
+        "database": {
+          "status": "healthy",
+          "latency_ms": 74.33
+        },
+        "redis": {
+          "status": "healthy",
+          "latency_ms": 5.71
+        }
+      },
+      "error": null
+    }
+    ```
+
+    **Example Validation Failure**
+    <!-- markdownlint-disable MD013 -->
+    ```json
+    {
+      "service_name": "",
+      "status": "unknown",
+      "status_code": 200,
+      "checks": {},
+      "error": "Invalid response format. Check that your response conforms to the expected response."
+    }
+    ```
+    <!-- markdownlint-enable MD013 -->
 
 2. **Download Still200:** Get the app to start managing your monitors.
 3. **Register a Monitor:** Add your newly created health check endpoint
@@ -70,18 +99,13 @@ databases, caches, and external services.
 
 ### Code Samples
 
-### Contributing
-
-Found a bug in the examples or want to add a sample in another language?
-Pull Requests are welcome.
-
-#### Python
+#### Python (FastAPI)
 
 ```python
 import asyncio
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, TypedDict, Literal
 
 app = FastAPI()
 
@@ -116,3 +140,8 @@ async def health(
         checks=checks,
     )
 ```
+
+#### Contributing
+
+Found a bug in the examples or want to add a sample in another language?
+Pull Requests are welcome.
