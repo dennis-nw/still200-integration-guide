@@ -17,6 +17,16 @@ and error codes.
 1. **Prepare Your API:** Ensure the service you want to monitor
 exposes a valid health check endpoint.
 Follow the [API Set UP Guide](#api-set-up-guide) below to format your response.
+You can then validate that your health check URL responds with the expected
+format by running:
+```bash
+curl -X POST -H "Content-Type: application/json" \
+-d '{"url": "https://myapi.com/health"}' \
+https://api.still200.com/monitors/validate
+```
+If there's an issue with the validation, the `error` field in the response
+will give details on what was wrong.
+
 2. **Download Still200:** Get the app to start managing your monitors.
 3. **Register a Monitor:** Add your newly created health check endpoint URL into the app.
 4. **Start Monitoring:** Still200 will immediately begin checking
