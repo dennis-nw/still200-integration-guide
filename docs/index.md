@@ -27,26 +27,26 @@ and code samples to help you get your endpoints monitored quickly.
     ```
 
     **Example Success Response**
-    
+
     ```json
     {
-     	"service_name": "Healthy API",
-     	"checks": {
-      		"database": {
-       			"status": "healthy",
-       			"latency_ms": 74.33
-      		},
-      		"redis": {
-       			"status": "healthy",
-       			"latency_ms": 5.71
-      		}
-     	},
-     	"error": null
+      "service_name": "Healthy API",
+      "checks": {
+        "database": {
+          "status": "healthy",
+          "latency_ms": 74.33
+        },
+        "redis": {
+          "status": "healthy",
+          "latency_ms": 5.71
+        }
+      },
+      "error": null
     }
     ```
 
     **Example Validation Failure**
-    
+
     ```json
     {
       "service_name": "",
