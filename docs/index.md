@@ -46,7 +46,7 @@ and code samples to help you get your endpoints monitored quickly.
     ```
 
     **Example Validation Failure**
-
+    <!-- markdownlint-disable MD013 -->
     ```json
     {
       "service_name": "",
@@ -56,6 +56,7 @@ and code samples to help you get your endpoints monitored quickly.
       "error": "Invalid response format. Check that your response conforms to the expected response."
     }
     ```
+    <!-- markdownlint-enable MD013 -->
 
 2. **Download Still200:** Get the app to start managing your monitors.
 3. **Register a Monitor:** Add your newly created health check endpoint
