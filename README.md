@@ -4,5 +4,4 @@
 incident monitoring platform focused on simplicity,
 reliability, and clean developer workflows.
 
-📚 Full documentation:
-https://dennis-nw.github.io/still200-integration-guide/
+📚 [Full documentation](https://dennis-nw.github.io/still200-integration-guide/)
