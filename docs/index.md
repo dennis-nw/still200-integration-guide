@@ -19,7 +19,7 @@ and code samples to help you get your endpoints monitored quickly.
     Follow the [API Set UP Guide](#api-set-up-guide) below to format
     your response. You can then validate that your health check URL
     responds with the expected format by running:
-    
+
     ```bash
     curl -X POST -H "Content-Type: application/json" \
     -d '{"url": "https://myapi.com/health"}' \
@@ -36,8 +36,9 @@ and code samples to help you get your endpoints monitored quickly.
     your endpoint on your configured schedule.
     Once registered, Still200 will begin checking your endpoint on the
     schedule you configured.
-    You'll receive real-time alerts if anything goes down — including AI-powered root
-    cause analysis. Currently delivered via Apple Push Notifications, with
+    You'll receive real-time alerts if anything goes down —
+    including AI-powered root cause analysis.
+    Currently delivered via Apple Push Notifications, with
     more channels coming soon.
 
 ## API Set Up Guide
