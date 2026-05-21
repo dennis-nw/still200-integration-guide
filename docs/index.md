@@ -61,10 +61,8 @@ and code samples to help you get your endpoints monitored quickly.
 2. **Download Still200:** Get the app to start managing your monitors.
 3. **Register a Monitor:** Add your newly created health check endpoint
     URL into the app.
-4. **Start Monitoring:** Still200 will immediately begin checking
-    your endpoint on your configured schedule.
-    Once registered, Still200 will begin checking your endpoint on the
-    schedule you configured.
+4. **Start Monitoring:** Once registered, Still200 will begin checking
+    your endpoint on the schedule you configured.
     You'll receive real-time alerts if anything goes down —
     including AI-powered root cause analysis.
     Currently delivered via Apple Push Notifications, with
@@ -141,7 +139,7 @@ async def health(
     )
 ```
 
-#### Contributing
+## Contributing
 
 Found a bug in the examples or want to add a sample in another language?
 Pull Requests are welcome.
