@@ -2,9 +2,12 @@
 title: Still200 Integration Guide
 ---
 
-## Table of Contents
+<!-- markdownlint-disable MD022 -->
 
+## Table of Contents
 {: .no_toc .text-delta }
+
+<!-- markdownlint-enable MD022 -->
 
 - TOC
 {:toc}
@@ -110,12 +113,12 @@ Once validated, you can register your monitor in the app.
 
 ## Register Your Monitor
 
-**Download Still200** from the [Apple App Store](https://apps.apple.com/us/app/still200/id6770858177)
+**1. Download Still200** from the [Apple App Store](https://apps.apple.com/us/app/still200/id6770858177)
 
-**Add your monitor.** Paste your health check URL into the app and set
+**2. Add your monitor.** Paste your health check URL into the app and set
 your preferred check interval.
 
-**You're live.** Still200 will begin polling your endpoint immediately.
+**3. You're live.** Still200 will begin polling your endpoint immediately.
 If a check fails, you'll receive a push notification on your phone.
 More alert channels coming soon.
 
@@ -150,7 +153,7 @@ your health endpoint must return a JSON body in the format described below.
 | Value | Meaning | Still200 behaviour |
 | --- | --- | --- |
 | `healthy` | Dependency is reachable and performing normally. | No action. |
-| `degraded` | Reachable but slow or returning soft errors. | Recorded in the timeline. |
+| `degraded` | Reachable but slow or returning soft errors. | Triggers an alert after the consecutive failure threshold is met. |
 | `unhealthy` | Dependency is down or unreachable. | Triggers an alert after the consecutive failure threshold is met. |
 
 <!-- markdownlint-enable MD013 -->
@@ -207,23 +210,23 @@ Pull Requests are welcome.
 
 ## Failure Semantics
 
-**Consecutive failure threshold**
+**Consecutive failure threshold.**
 Still200 does not alert on the first failed check. An alert is sent once
 your endpoint has failed on a set number of consecutive checks.
 This prevents transient blips from waking you up at 3am.
 
-**Timeout**
+**Timeout.**
 If your endpoint does not respond within the check timeout,
 Still200 treats it as a failed check. Keep your health handler fast —
 aim for under 500ms. Running dependency checks concurrently (as shown
 in the samples above) helps significantly.
 
-**HTTP status codes**
+**HTTP status codes.**
 Still200 reads health from the response body. Return `200` from your
 endpoint even when internal dependencies are unhealthy — Still200 inspects
 the `status` fields inside `checks` to determine alert eligibility.
 
-**Partial failures**
+**Partial failures.**
 A single `unhealthy` check in an otherwise healthy response will trigger
 the failure path after the threshold is met.
 
