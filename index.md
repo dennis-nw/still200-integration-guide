@@ -76,22 +76,22 @@ curl -X POST -H "Content-Type: application/json" \
 And for the full set up:
 
  ```json
-    {
-      "service_name": "My API",
+{
+  "service_name": "My API",
+  "status": "healthy",
+  "status_code": 200,
+  "checks": {
+    "database": {
       "status": "healthy",
-      "status_code": 200,
-      "checks": {
-        "database": {
-          "status": "healthy",
-          "latency_ms": 74.33
-        },
-        "redis": {
-          "status": "healthy",
-          "latency_ms": 5.71
-        }
-      },
-      "error": null
+      "latency_ms": 74.33
+    },
+    "redis": {
+      "status": "healthy",
+      "latency_ms": 5.71
     }
+  },
+  "error": null
+}
 ```
 
 If your format is wrong, the response will include an `error` string describing
@@ -99,13 +99,13 @@ what to fix:
 
 <!-- markdownlint-disable MD013 -->
 ```json
-  {
-    "service_name": "",
-    "status": "unknown",
-    "status_code": 200,
-    "checks": {},
-    "error": "Invalid response format. Check that your response conforms to the expected response."
-  }
+{
+  "service_name": "",
+  "status": "unknown",
+  "status_code": 200,
+  "checks": {},
+  "error": "Invalid response format. Check that your response conforms to the expected response."
+}
 ```
 <!-- markdownlint-enable MD013 -->
 
