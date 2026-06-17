@@ -1,7 +1,8 @@
-theme: just-the-docs
-
 title: Still200 Integration Guide
 description: Add uptime monitoring to your API in under 5 minutes.
+
+theme: just-the-docs
+
 nav_enabled: true
 heading_anchors: true
 footer_content: 'Copyright &copy; 2026 <a href="https://byteslab.io">Bytes Lab</a>'
