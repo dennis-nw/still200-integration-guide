@@ -1,7 +1,7 @@
 title: Still200 Integration Guide
 description: Add uptime monitoring to your API in under 5 minutes.
 
-theme: just-the-docs
+remote_theme: just-the-docs/just-the-docs
 
 nav_enabled: true
 heading_anchors: true
