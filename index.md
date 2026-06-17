@@ -167,14 +167,14 @@ your health endpoint must return a JSON body in the format described below.
 import asyncio
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
-from typing import Dict, TypedDict, Literal
+from typing import Dict, Literal, Optional
 
 app = FastAPI()
 
-class CheckResult(TypedDict):
+class CheckResult(BaseModel):
     status: Literal["healthy", "degraded", "unhealthy"]
     latency_ms: float
-    error: NotRequired[str]
+    error: Optional[str] = None
 
 class HealthCheckResponse(BaseModel):
     service_name: str
@@ -182,16 +182,14 @@ class HealthCheckResponse(BaseModel):
 
 @app.get("/health", response_model=HealthCheckResponse)
 async def health(
-    db: AsyncSession = Depends(get_db),
-    redis_client: aioredis.Redis = Depends(get_redis),
+    db = Depends(get_db),
+    redis_client = Depends(get_redis)
 ) -> HealthCheckResponse:
-    
     # Execute dependency checks concurrently
     async with asyncio.TaskGroup() as tg:
         db_check = tg.create_task(check_db(db=db))
         redis_check = tg.create_task(check_redis(redis_client=redis_client))
 
-    # check methods return a dict with status and latency_ms
     checks = {
         "database": db_check.result(), 
         "redis": redis_check.result()
