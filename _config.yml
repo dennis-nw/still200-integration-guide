@@ -3,6 +3,6 @@ description: Add uptime monitoring to your API in under 5 minutes.
 
 remote_theme: just-the-docs/just-the-docs
 
-nav_enabled: true
+nav_enabled: false
 heading_anchors: true
 footer_content: 'Copyright &copy; 2026 <a href="https://byteslab.io">Bytes Lab</a>'

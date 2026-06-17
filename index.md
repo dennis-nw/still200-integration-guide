@@ -1,4 +1,9 @@
-# Still200 Integration Guide
+---
+title: Still200 Integration Guide
+---
+
+## Table of Contents
+{: .no_toc .text-delta }
 
 1. TOC
 {:toc}
@@ -16,14 +21,14 @@ and expose. Choose the setup that fits your needs:
 | **Alert detail** | Up/down | Per-dependency root cause analysis |
 | **Best for** | Getting started fast | Production services |
 
-## 1. Backend Setup
+## Backend Setup
 
 ### Simple Setup
 
 The fastest way to set up monitoring. Add a single route that returns your
 service name, register it in the app, and you're done.
 
-#### Add the endpoint
+**Add the endpoint**
 
 ```python
 from fastapi import FastAPI
@@ -41,12 +46,12 @@ from the response body, but won't parse it if the request fails.
 
 ### Full Setup
 
-#### Add a health endpoint
+**Add a health endpoint**
 
 Follow the [Health Check Spec](#health-check-spec) below to
 format your response correctly.
 
-## 2. Validate your endpoint
+## Validate your endpoint
 
 Before registering your health check URL, confirm the format is correct:
 
@@ -106,7 +111,7 @@ what to fix:
 
 Once validated, you can register your monitor in the app.
 
-## 3. Register Your Monitor
+## Register Your Monitor
 
 **Download Still200** from the [Apple App Store](https://apps.apple.com/us/app/still200/id6770858177)
 
