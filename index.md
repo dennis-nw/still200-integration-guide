@@ -3,9 +3,10 @@ title: Still200 Integration Guide
 ---
 
 ## Table of Contents
+
 {: .no_toc .text-delta }
 
-1. TOC
+- TOC
 {:toc}
 
 Everything you need to integrate your API with
@@ -28,8 +29,6 @@ and expose. Choose the setup that fits your needs:
 The fastest way to set up monitoring. Add a single route that returns your
 service name, register it in the app, and you're done.
 
-**Add the endpoint**
-
 ```python
 from fastapi import FastAPI
  
@@ -45,8 +44,6 @@ Make sure your endpoint returns a `200` status code — Still200 reads health
 from the response body, but won't parse it if the request fails.
 
 ### Full Setup
-
-**Add a health endpoint**
 
 Follow the [Health Check Spec](#health-check-spec) below to
 format your response correctly.
