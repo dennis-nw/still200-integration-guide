@@ -1,5 +1,8 @@
 # Still200 Integration Guide
 
+1. TOC
+{:toc}
+
 Everything you need to integrate your API with
 [Still200](https://still200.com) — an uptime monitoring
 platform for developers.
@@ -105,10 +108,12 @@ Once validated, you can register your monitor in the app.
 
 ## 3. Register Your Monitor
 
-**1. Download Still200** from the [Apple App Store](https://apps.apple.com/us/app/still200/id6770858177)
-**2. Add your monitor.** Paste your health check URL into the app and set
+**Download Still200** from the [Apple App Store](https://apps.apple.com/us/app/still200/id6770858177)
+
+**Add your monitor.** Paste your health check URL into the app and set
 your preferred check interval.
-**3. You're live.** Still200 will begin polling your endpoint immediately.
+
+**You're live.** Still200 will begin polling your endpoint immediately.
 If a check fails, you'll receive a push notification on your phone.
 More alert channels coming soon.
 
@@ -129,6 +134,7 @@ your health endpoint must return a JSON body in the format described below.
 
 ### Fields
 <!-- markdownlint-disable MD013 -->
+
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `service_name` | string | Yes | Human-readable name shown in the app and alert notifications. |
@@ -144,6 +150,7 @@ your health endpoint must return a JSON body in the format described below.
 | `healthy` | Dependency is reachable and performing normally. | No action. |
 | `degraded` | Reachable but slow or returning soft errors. | Recorded in the timeline. |
 | `unhealthy` | Dependency is down or unreachable. | Triggers an alert after the consecutive failure threshold is met. |
+
 <!-- markdownlint-enable MD013 -->
 ---
 
