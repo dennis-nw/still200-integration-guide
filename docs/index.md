@@ -1,36 +1,77 @@
 # Still200 Integration Guide
 
 Everything you need to integrate your API with
-[Still200](https://still200.com) —
-an uptime monitoring platform for indie developers.
-This repo contains the API reference, integration docs,
-and code samples to help you get your endpoints monitored quickly.
+[Still200](https://still200.com) — an uptime monitoring
+platform for developers.
+Still200 monitors your API by polling a health endpoint that you define
+and expose. Choose the setup that fits your needs:
 
-## What's Inside
+| | [Simple Setup](#simple-setup) | [Full Setup](#full-setup) |
+| --- | --- | --- |
+| **Time to integrate** | ~2 minutes | ~15 minutes |
+| **What's monitored** | API reachability | API + individual dependencies |
+| **Alert detail** | Up/down | Per-dependency root cause analysis |
+| **Best for** | Getting started fast | Production services |
 
-- **API Reference** — endpoints, authentication, request/response formats,
-  and error codes.
-- **Code Examples** — ready-to-run samples for integrating with Still200.
+## 1. Backend Setup
 
-## Quick Start
+### Simple Setup
 
-1. **Prepare Your API:** Ensure the service you want to monitor
-    exposes a valid health check endpoint.
-    Follow the [API Set UP Guide](#api-set-up-guide) below to format
-    your response. You can then validate that your health check URL
-    responds with the expected format by running:
+The fastest way to set up monitoring. Add a single route that returns your
+service name, register it in the app, and you're done.
 
-    ```bash
-    curl -X POST -H "Content-Type: application/json" \
+#### Add the endpoint
+
+```python
+from fastapi import FastAPI
+ 
+app = FastAPI()
+ 
+@app.get("/health")
+async def health():
+    return {"service_name": "my-api"}
+```
+
+That's it. No dependencies, no extra packages.
+Make sure your endpoint returns a `200` status code — Still200 reads health
+from the response body, but won't parse it if the request fails.
+
+### Full Setup
+
+#### Add a health endpoint
+
+Follow the [Health Check Spec](#health-check-spec) below to
+format your response correctly.
+
+## 2. Validate your endpoint
+
+Before registering your health check URL, confirm the format is correct:
+
+A passing response looks like this for the simple setup:
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
     -d '{"url": "https://myapi.com/health"}' \
     https://api.still200.com/monitors/validate
-    ```
+```
 
-    **Example Success Response**
+```json
+{
+  "service_name": "my-api",
+  "status": "healthy",
+  "status_code": 200,
+  "checks": {},
+  "error": null
+}
+```
 
-    ```json
+And for the full set up:
+
+ ```json
     {
-      "service_name": "Healthy API",
+      "service_name": "My API",
+      "status": "healthy",
+      "status_code": 200,
       "checks": {
         "database": {
           "status": "healthy",
@@ -43,61 +84,72 @@ and code samples to help you get your endpoints monitored quickly.
       },
       "error": null
     }
-    ```
-
-    **Example Validation Failure**
-    <!-- markdownlint-disable MD013 -->
-    ```json
-    {
-      "service_name": "",
-      "status": "unknown",
-      "status_code": 200,
-      "checks": {},
-      "error": "Invalid response format. Check that your response conforms to the expected response."
-    }
-    ```
-    <!-- markdownlint-enable MD013 -->
-
-2. **Download Still200:** Get the app to start managing your monitors.
-3. **Register a Monitor:** Add your newly created health check endpoint
-    URL into the app.
-4. **Start Monitoring:** Once registered, Still200 will begin checking
-    your endpoint on the schedule you configured.
-    You'll receive real-time alerts if anything goes down —
-    including AI-powered root cause analysis.
-    Currently delivered via Apple Push Notifications, with
-    more channels coming soon.
-
-## API Set Up Guide
-
-### Health Check Response Spec
-
-Still200 expects your health check endpoint to return a JSON response
-in a specific format. This allows Still200 to monitor not just whether
-your API is up, but the health of individual dependencies like
-databases, caches, and external services.
-
-#### Response Format
-
-```json
-{
-  "service_name": "My API",
-  "checks": {
-    "database": {
-      "status": "healthy",
-      "latency_ms": 50.82
-    },
-    "redis": {
-      "status": "healthy",
-      "latency_ms": 7.12
-    }
-  }
-}
 ```
 
-### Code Samples
+If your format is wrong, the response will include an `error` string describing
+what to fix:
 
-#### Python (FastAPI)
+<!-- markdownlint-disable MD013 -->
+```json
+  {
+    "service_name": "",
+    "status": "unknown",
+    "status_code": 200,
+    "checks": {},
+    "error": "Invalid response format. Check that your response conforms to the expected response."
+  }
+```
+<!-- markdownlint-enable MD013 -->
+
+Once validated, you can register your monitor in the app.
+
+## 3. Register Your Monitor
+
+**1. Download Still200** from the [Apple App Store](https://apps.apple.com/us/app/still200/id6770858177)
+**2. Add your monitor.** Paste your health check URL into the app and set
+your preferred check interval.
+**3. You're live.** Still200 will begin polling your endpoint immediately.
+If a check fails, you'll receive a push notification on your phone.
+More alert channels coming soon.
+
+---
+
+## Health Check Spec
+
+Still200 monitors the individual dependencies inside your service,
+not just whether the HTTP response is 200. To support this,
+your health endpoint must return a JSON body in the format described below.
+
+### Endpoint Requirements
+
+- **Method:** `GET`
+- **Content-Type:** `application/json`
+- **Status Code:** Return `200` regardless of internal health status.
+  Still200 reads health from the response body, not the HTTP status code.
+
+### Fields
+<!-- markdownlint-disable MD013 -->
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `service_name` | string | Yes | Human-readable name shown in the app and alert notifications. |
+| `checks` | object | No | Map of dependency names to their status. An empty object `{}` is valid. |
+| `checks[n].status` | string | Yes | One of `healthy`, `degraded`, or `unhealthy`. See [Status Values](#status-values) below. |
+| `checks[n].latency_ms` | float | No | Time in milliseconds to connect to or query the dependency. |
+| `checks[n].error` | string | No | Error detail surfaced in alerts and RCA when status is not `healthy`. |
+
+### Status Values
+
+| Value | Meaning | Still200 behaviour |
+| --- | --- | --- |
+| `healthy` | Dependency is reachable and performing normally. | No action. |
+| `degraded` | Reachable but slow or returning soft errors. | Recorded in the timeline. |
+| `unhealthy` | Dependency is down or unreachable. | Triggers an alert after the consecutive failure threshold is met. |
+<!-- markdownlint-enable MD013 -->
+---
+
+## Code Samples
+
+### Python (FastAPI)
 
 ```python
 import asyncio
@@ -139,7 +191,42 @@ async def health(
     )
 ```
 
-## Contributing
+### Contributing
 
 Found a bug in the examples or want to add a sample in another language?
 Pull Requests are welcome.
+
+## Failure Semantics
+
+**Consecutive failure threshold**
+Still200 does not alert on the first failed check. An alert is sent once
+your endpoint has failed on a set number of consecutive checks.
+This prevents transient blips from waking you up at 3am.
+
+**Timeout**
+If your endpoint does not respond within the check timeout,
+Still200 treats it as a failed check. Keep your health handler fast —
+aim for under 500ms. Running dependency checks concurrently (as shown
+in the samples above) helps significantly.
+
+**HTTP status codes**
+Still200 reads health from the response body. Return `200` from your
+endpoint even when internal dependencies are unhealthy — Still200 inspects
+the `status` fields inside `checks` to determine alert eligibility.
+
+**Partial failures**
+A single `unhealthy` check in an otherwise healthy response will trigger
+the failure path after the threshold is met.
+
+## FAQs
+
+**Does my health endpoint need to be publicly accessible?**
+
+Yes. Still200 polls your endpoint from its own infrastructure, so it must
+be reachable over the public internet.
+
+**Can I add custom checks beyond databases and caches?**
+
+Yes. The `checks` map accepts any string key. Common additions include
+external API dependencies (`stripe`, `sendgrid`).
+Name them whatever is meaningful in your context.
