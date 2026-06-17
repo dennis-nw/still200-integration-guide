@@ -39,9 +39,11 @@ from the response body, but won't parse it if the request fails.
 ### Full Setup
 
 #### Add a health endpoint
+
 Follow the [Health Check Spec](#health-check-spec) below to format your response correctly.
 
 ## 2. Validate your endpoint
+
 Before registering your health check URL, confirm the format is correct:
 
 A passing response looks like this for the simple setup:
@@ -125,7 +127,7 @@ your health endpoint must return a JSON body in the format described below.
   Still200 reads health from the response body, not the HTTP status code.
 
 ### Fields
-
+<!-- markdownlint-disable MD013 -->
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `service_name` | string | Yes | Human-readable name shown in the app and alert notifications. |
@@ -141,7 +143,7 @@ your health endpoint must return a JSON body in the format described below.
 | `healthy` | Dependency is reachable and performing normally. | No action. |
 | `degraded` | Reachable but slow or returning soft errors. | Recorded in the timeline. |
 | `unhealthy` | Dependency is down or unreachable. | Triggers an alert after the consecutive failure threshold is met. |
-
+<!-- markdownlint-enable MD013 -->
 ---
 
 ## Code Samples
@@ -196,7 +198,6 @@ Pull Requests are welcome.
 ## Failure Semantics
 
 **Consecutive failure threshold**
-
 Still200 does not alert on the first failed check. An alert is sent once
 your endpoint has failed on a set number of consecutive checks.
 This prevents transient blips from waking you up at 3am.
@@ -219,12 +220,12 @@ the failure path after the threshold is met.
 ## FAQs
 
 **Does my health endpoint need to be publicly accessible?**
- 
+
 Yes. Still200 polls your endpoint from its own infrastructure, so it must
 be reachable over the public internet.
 
 **Can I add custom checks beyond databases and caches?**
- 
+
 Yes. The `checks` map accepts any string key. Common additions include
 external API dependencies (`stripe`, `sendgrid`).
 Name them whatever is meaningful in your context.
