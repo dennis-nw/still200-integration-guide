@@ -1,8 +1,8 @@
 # Still200 Integration Guide
 
 Everything you need to integrate your API with
-[Still200](https://still200.com) —
-an uptime monitoring platform for developers.
+[Still200](https://still200.com) — an uptime monitoring
+platform for developers.
 Still200 monitors your API by polling a health endpoint that you define
 and expose. Choose the setup that fits your needs:
 
@@ -40,7 +40,8 @@ from the response body, but won't parse it if the request fails.
 
 #### Add a health endpoint
 
-Follow the [Health Check Spec](#health-check-spec) below to format your response correctly.
+Follow the [Health Check Spec](#health-check-spec) below to
+format your response correctly.
 
 ## 2. Validate your endpoint
 
