@@ -55,13 +55,13 @@ format your response correctly.
 
 Before registering your health check URL, confirm the format is correct:
 
-A passing response looks like this for the simple setup:
-
 ```bash
 curl -X POST -H "Content-Type: application/json" \
     -d '{"url": "https://myapi.com/health"}' \
     https://api.still200.com/monitors/validate
 ```
+
+A passing response looks like this for the simple setup:
 
 ```json
 {
@@ -73,7 +73,7 @@ curl -X POST -H "Content-Type: application/json" \
 }
 ```
 
-And for the full set up:
+and it looks like this for the full set up:
 
  ```json
 {
