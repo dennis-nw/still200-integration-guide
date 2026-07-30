@@ -145,7 +145,6 @@ describing what to fix, and `checks` will be `null`, meaning Still200
 couldn't determine your checks at all (as opposed to `{}`, which means it
 reached you and you explicitly reported zero checks):
 
-<!-- markdownlint-disable MD013 -->
 ```json
 {
   "service_name": "",
@@ -155,7 +154,6 @@ reached you and you explicitly reported zero checks):
   "error": "Invalid response format. Check that your response conforms to the expected response."
 }
 ```
-<!-- markdownlint-enable MD013 -->
 
 Once validated, you can register your monitor in the app.
 
@@ -189,7 +187,6 @@ return a JSON body in the format described below.
   slower is treated as a failed check. See [Failure Semantics](#failure-semantics).
 
 ### Fields
-<!-- markdownlint-disable MD013 -->
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -197,8 +194,6 @@ return a JSON body in the format described below.
 | `checks` | object | No | Map of dependency names to their status. An empty object `{}` is valid. |
 | `checks[n].latency_ms` | float | No | Time in milliseconds to connect to or query the dependency. Used to auto-detect `degraded` when `status` is omitted. |
 | `checks[n].error` | string | No | Error detail. Surfaced in alerts and root-cause summaries. If present, the check is automatically marked `unhealthy`. |
-
-<!-- markdownlint-enable MD013 -->
 
 ### Status Derivation
 
@@ -211,15 +206,12 @@ Still200 derives the health status based on the response your endpoint returns:
 | Anything else, including an empty `{}` | `healthy` |
 
 ### Status Values
-<!-- markdownlint-disable MD013 -->
 
 | Value | Meaning | Still200 behaviour |
 | --- | --- | --- |
 | `healthy` | Dependency is reachable and performing normally. | No action. |
 | `degraded` | Reachable but slow | Shown in the app and in root-cause summaries. **Does not** trigger an alert, no matter how long it persists — see [Failure Semantics](#failure-semantics). |
 | `unhealthy` | Dependency is down or unreachable. | Counts toward the alert threshold. |
-
-<!-- markdownlint-enable MD013 -->
 
 ---
 
