@@ -106,7 +106,6 @@ For the full setup, here's what **your endpoint** would return:
 ```json
 {
   "service_name": "My API",
-  "status": "healthy",
   "checks": {
     "database": {"latency_ms": 74.33},
     "redis": {"latency_ms": 4.11}
@@ -192,7 +191,7 @@ return a JSON body in the format described below.
 | --- | --- | --- | --- |
 | `service_name` | string | Yes | Human-readable name shown in the app and alert notifications. |
 | `checks` | object | No | Map of dependency names to their status. An empty object `{}` is valid. |
-| `checks[n].latency_ms` | float | No | Time in milliseconds to connect to or query the dependency. Used to auto-detect `degraded` when `status` is omitted. |
+| `checks[n].latency_ms` | float | No | Time in milliseconds to connect to or query the dependency. Used to auto-detect a `degraded` status. |
 | `checks[n].error` | string | No | Error detail. Surfaced in alerts and root-cause summaries. If present, the check is automatically marked `unhealthy`. |
 
 ### Status Derivation
