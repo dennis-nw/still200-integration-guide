@@ -4,9 +4,23 @@
   "name": "Still200",
   "description": "Monitor HTTP services and scheduled jobs with Still200.",
   "colors": {
-    "primary": "#18181B",
-    "light": "#3F3F46",
-    "dark": "#FAFAFA"
+    "primary": "#059669",
+    "light": "#059669",
+    "dark": "#34d399"
+  },
+  "logo": {
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-dark.svg"
+  },
+  "favicon": "/images/favicon.svg",
+  "background": {
+    "decoration": "grid"
+  },
+  "fonts": {
+    "family": "Geist"
+  },
+  "appearance": {
+    "default": "light"
   },
   "navbar": {
     "links": [
@@ -14,12 +28,7 @@
         "label": "Dashboard",
         "href": "https://app.still200.com"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Open Still200",
-      "href": "https://app.still200.com"
-    }
+    ]
   },
   "navigation": {
     "groups": [
