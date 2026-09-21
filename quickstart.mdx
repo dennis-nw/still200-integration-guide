@@ -1,0 +1,69 @@
+---
+title: "Quickstart"
+description: "Create your first Still200 monitor."
+icon: "rocket"
+---
+
+Choose the path that matches the workload you want to monitor.
+
+<Tabs>
+  <Tab title="HTTP service">
+    <Steps>
+      <Step title="Expose a health endpoint">
+        Return JSON containing a service name. The endpoint must be publicly reachable.
+
+        ```python
+        from fastapi import FastAPI
+
+        app = FastAPI()
+
+        @app.get("/health")
+        async def health():
+            return {"service_name": "billing-api"}
+        ```
+      </Step>
+      <Step title="Validate the response">
+        ```bash
+        curl -X POST https://api.still200.com/monitors/validate \
+          -H 'Content-Type: application/json' \
+          -d '{"url":"https://example.com/health"}'
+        ```
+      </Step>
+      <Step title="Create the monitor">
+        Open the [Still200 dashboard](https://app.still200.com), add an HTTP monitor, and enter the health endpoint URL.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Scheduled job">
+    <Steps>
+      <Step title="Create the monitor">
+        In the [Still200 dashboard](https://app.still200.com), add a scheduled-job monitor. Enter its cron expression, IANA timezone, grace period, and optional maximum runtime.
+      </Step>
+      <Step title="Store the ping token">
+        Copy the generated token into your job's secret store. Still200 only shows a newly generated token once.
+
+        ```bash
+        export STILL200_PING_TOKEN='s200_pt_your-token'
+        ```
+      </Step>
+      <Step title="Report the run">
+        Send `start` before the work and `finish` only after it succeeds.
+
+        ```bash
+        curl --fail --request POST https://api.still200.com/jobs/ping/start \
+          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+
+        ./your-job
+
+        curl --fail --request POST https://api.still200.com/jobs/ping/finish \
+          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+<CardGroup cols={2}>
+  <Card title="HTTP health-check contract" icon="file-code" href="/http-monitoring/health-check-spec" />
+  <Card title="Scheduled-job pings" icon="signal" href="/scheduled-jobs/report-runs" />
+</CardGroup>

@@ -1,0 +1,57 @@
+---
+title: "HTTP examples"
+description: "Implement a fast, dependency-aware health endpoint."
+icon: "code"
+---
+
+## FastAPI
+
+Run independent checks concurrently so a slow dependency does not consume the entire five-second request budget.
+
+```python
+import asyncio
+import time
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+async def check_dependency(name, operation):
+    started_at = time.perf_counter()
+    try:
+        await operation()
+        return name, {
+            "latency_ms": (time.perf_counter() - started_at) * 1_000,
+        }
+    except Exception as exc:
+        return name, {"error": str(exc)}
+
+
+@app.get("/health")
+async def health():
+    results = await asyncio.gather(
+        check_dependency("postgres", check_postgres),
+        check_dependency("redis", check_redis),
+    )
+    return {
+        "service_name": "billing-api",
+        "checks": dict(results),
+    }
+```
+
+Replace `check_postgres` and `check_redis` with short operations provided by your application. Keep the handler read-only and avoid expensive application work.
+
+## Minimal endpoint
+
+If you only need reachability monitoring, return the service name:
+
+```python
+@app.get("/health")
+async def health():
+    return {"service_name": "billing-api"}
+```
+
+<Tip>
+  Validate the deployed URL with the [validation endpoint](/http-monitoring/health-check-spec#validate-an-endpoint) before creating the monitor.
+</Tip>

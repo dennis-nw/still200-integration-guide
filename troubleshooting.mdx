@@ -1,0 +1,37 @@
+---
+title: "Troubleshooting"
+description: "Resolve common HTTP and scheduled-job integration problems."
+icon: "wrench"
+---
+
+## HTTP monitors
+
+### The validation response has `checks: null`
+
+Still200 could not parse a valid check set. Confirm the endpoint is publicly reachable, returns HTTP `200` within five seconds, and responds with JSON matching the [health-check specification](/http-monitoring/health-check-spec).
+
+### A degraded dependency did not alert
+
+This is expected. Degraded results are recorded, but only unhealthy or failed polls count toward the three-failure incident threshold.
+
+## Scheduled jobs
+
+### A ping returns `401 Unauthorized`
+
+Confirm that the `Still200-Ping-Token` header is present and contains the latest token. If the token was regenerated, update the job's secret store because the old token became invalid immediately.
+
+### A start ping returns `409 Conflict`
+
+The monitor may be paused, missing schedule data, or starting more than 60 seconds before its expected run. Review the response's `detail` value for the exact reason.
+
+### Finish or fail returns `409 Conflict`
+
+There is no active run. Each finish or fail ping must follow a successful start ping for the same monitor.
+
+### A job stays `running`
+
+The process did not send a finish or fail ping. Configure a maximum runtime so Still200 can mark abandoned runs as `timed_out`, and make sure every exit path reports a terminal state.
+
+### The job was marked missed but ran later
+
+Send the start ping when the retry begins. Still200 can reopen the missed occurrence as `running`, resolve its missed-run incident, and record it as `late` after a successful finish.

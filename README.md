@@ -1,7 +1,27 @@
-# Still200 Integration Guide
+# Still200 documentation
 
-[Still200](https://still200.com) is a modern uptime and
-incident monitoring platform focused on simplicity,
-reliability, and clean developer workflows.
+The Still200 integration guide is built with [Mintlify](https://mintlify.com).
 
-📚 [Full documentation](https://dennis-nw.github.io/still200-integration-guide/)
+## Local development
+
+Mintlify requires Node.js 20.17 or newer.
+
+```bash
+npm install --global mint
+mint dev
+```
+
+The local site is available at <http://localhost:3000>.
+
+Before opening a pull request, run:
+
+```bash
+mint validate
+mint broken-links --check-anchors
+```
+
+## Deployment
+
+Connect this repository to a Mintlify project from the Mintlify dashboard and install the Mintlify GitHub App for this repository. Pushes to the configured deployment branch are then built and published automatically.
+
+The site structure and branding live in `docs.json`. Documentation pages use MDX and must be included in the `navigation` section to appear in the sidebar and search index.

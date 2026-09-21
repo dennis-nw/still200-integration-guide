@@ -1,0 +1,60 @@
+---
+title: "Report job runs"
+description: "Send authenticated start, finish, and failure pings."
+icon: "signal"
+---
+
+All lifecycle endpoints use the same token header:
+
+```http
+Still200-Ping-Token: s200_pt_your-secret-token
+```
+
+Missing or invalid tokens return `401 Unauthorized`. Keep the token in a secret store and avoid writing it to logs.
+
+## Start a run
+
+Call the start endpoint immediately before doing the monitored work:
+
+```bash
+curl --fail --request POST https://api.still200.com/jobs/ping/start \
+  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+```
+
+A start ping is accepted up to 60 seconds before the expected time. A repeated start ping is safe: while a run is already active, Still200 returns that same run instead of creating another one.
+
+If a run was already marked missed, a later start may recover that missed occurrence. Its incident resolves when the start arrives, and a successful finish records the run as `late`.
+
+## Finish a run
+
+Call the finish endpoint only after the work completes successfully:
+
+```bash
+curl --fail --request POST https://api.still200.com/jobs/ping/finish \
+  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+```
+
+The endpoint returns `409 Conflict` when the monitor has no running job to finish.
+
+## Fail a run
+
+If the work raises an error, report a concise message and optional structured diagnostics:
+
+```bash
+curl --fail --request POST https://api.still200.com/jobs/ping/fail \
+  --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "error_message": "Database backup upload failed",
+    "payload": {
+      "bucket": "nightly-backups",
+      "attempt": 3
+    }
+  }'
+```
+
+`error_message` is optional and limited to 2,000 characters. `payload` accepts a JSON object. If no message is supplied, Still200 records a generic failure message.
+
+<Warning>
+  A process that exits without sending `finish` or `fail` remains `running`. Configure a maximum runtime if you want Still200 to turn that condition into a `timed_out` incident.
+</Warning>

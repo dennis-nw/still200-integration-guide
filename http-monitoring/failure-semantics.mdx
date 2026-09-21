@@ -1,0 +1,29 @@
+---
+title: "Failure semantics"
+description: "Learn when an HTTP check opens or resolves an incident."
+icon: "triangle-exclamation"
+---
+
+## Consecutive failures
+
+Still200 opens an incident after three consecutive failed polls. A later healthy poll resets the failure count and resolves the open incident.
+
+Failed polls include:
+
+- connection and DNS errors
+- responses that take longer than 5 seconds
+- non-200 HTTP responses
+- malformed JSON or an invalid response shape
+- any dependency result derived as `unhealthy`
+
+## Degraded services
+
+A dependency with latency above 1,000 ms and no error is `degraded`. Still200 records the result, but degraded checks do not count toward the incident threshold.
+
+## Partial failures
+
+The worst dependency result determines the overall poll result. One unhealthy dependency makes the poll unhealthy even when every other check succeeds.
+
+<Warning>
+  Return HTTP `200` with an `error` inside the affected dependency check. Returning a non-200 response prevents Still200 from reading the structured dependency details.
+</Warning>
