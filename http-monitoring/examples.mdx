@@ -30,13 +30,19 @@ async def check_dependency(name, operation):
 
 @app.get("/health")
 async def health():
-    results = await asyncio.gather(
-        check_dependency("postgres", check_postgres),
-        check_dependency("redis", check_redis),
-    )
+    async with asyncio.TaskGroup() as task_group:
+        tasks = [
+            task_group.create_task(
+                check_dependency("postgres", check_postgres)
+            ),
+            task_group.create_task(
+                check_dependency("redis", check_redis)
+            ),
+        ]
+
     return {
         "service_name": "billing-api",
-        "checks": dict(results),
+        "checks": dict(task.result() for task in tasks),
     }
 ```
 
