@@ -1,0 +1,42 @@
+---
+title: "HTTP monitoring"
+description: "Let Still200 poll your service and its dependencies."
+icon: "globe"
+---
+
+An HTTP monitor periodically requests a public health endpoint. Still200 records availability and response time, classifies dependency health, and opens an incident after repeated failures.
+
+## Simple response
+
+The smallest valid endpoint returns a service name with HTTP `200`:
+
+```json
+{
+  "service_name": "billing-api"
+}
+```
+
+## Dependency-aware response
+
+Add a `checks` object to report latency or an error for each dependency:
+
+```json
+{
+  "service_name": "billing-api",
+  "checks": {
+    "postgres": { "latency_ms": 42.7 },
+    "redis": { "latency_ms": 3.1 }
+  }
+}
+```
+
+Still200 derives each check's status. An error is `unhealthy`, latency above 1,000 ms is `degraded`, and other results are `healthy`.
+
+<CardGroup cols={2}>
+  <Card title="Health-check specification" icon="list-check" href="/http-monitoring/health-check-spec">
+    Review every request and response requirement.
+  </Card>
+  <Card title="Implementation examples" icon="code" href="/http-monitoring/examples">
+    Build a dependency-aware endpoint.
+  </Card>
+</CardGroup>

@@ -1,0 +1,48 @@
+---
+title: "Configure a schedule"
+description: "Define when a job should run and how long Still200 should wait."
+icon: "calendar"
+---
+
+Create a scheduled-job monitor in the [Still200 dashboard](https://app.still200.com) and configure these values.
+
+| Setting | Description | Default |
+| --- | --- | --- |
+| Name | A recognizable job name. | Required |
+| Cron expression | A five-field cron schedule. | Required |
+| Timezone | IANA timezone used to interpret the schedule. | `UTC` |
+| Grace period | Seconds after the scheduled time before the run is missed. | 300 seconds |
+| Maximum runtime | Seconds a started job may run before it times out. | Optional |
+
+## Cron expressions
+
+Still200 accepts standard five-field cron expressions and croniter shorthands such as `@hourly` and `@daily`. Consecutive occurrences must be at least five minutes apart.
+
+```text
+┌──────── minute (0–59)
+│ ┌────── hour (0–23)
+│ │ ┌──── day of month (1–31)
+│ │ │ ┌── month (1–12)
+│ │ │ │ ┌ day of week (0–6)
+│ │ │ │ │
+0 2 * * *
+```
+
+| Expression | Meaning |
+| --- | --- |
+| `0 * * * *` | At the start of every hour |
+| `0 2 * * *` | Every day at 02:00 |
+| `0,10,30 * * * 1,2,3` | At minutes 0, 10, and 30 on Monday through Wednesday |
+| `0 9 * * 1-5` | Weekdays at 09:00 |
+
+## Timezones
+
+Use an IANA timezone such as `UTC`, `America/New_York`, or `Africa/Nairobi`. Still200 converts each occurrence to an absolute time; your server and Still200 do not need to share a timezone.
+
+<Warning>
+  Local schedules can be skipped or repeated during daylight-saving transitions. Use `UTC` when a fixed elapsed interval matters more than local wall-clock time.
+</Warning>
+
+## Ping token
+
+Still200 returns a token when the monitor is created or its token is regenerated. Store it as a secret and send it in the `Still200-Ping-Token` header. Regenerating the token immediately invalidates the previous value.

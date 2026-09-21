@@ -1,0 +1,60 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Still200",
+  "description": "Monitor HTTP services and scheduled jobs with Still200.",
+  "colors": {
+    "primary": "#18181B",
+    "light": "#3F3F46",
+    "dark": "#FAFAFA"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://app.still200.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Open Still200",
+      "href": "https://app.still200.com"
+    }
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get started",
+        "pages": ["index", "quickstart"]
+      },
+      {
+        "group": "HTTP monitoring",
+        "pages": [
+          "http-monitoring/overview",
+          "http-monitoring/health-check-spec",
+          "http-monitoring/examples",
+          "http-monitoring/failure-semantics"
+        ]
+      },
+      {
+        "group": "Scheduled jobs",
+        "pages": [
+          "scheduled-jobs/overview",
+          "scheduled-jobs/configure",
+          "scheduled-jobs/report-runs",
+          "scheduled-jobs/statuses",
+          "scheduled-jobs/examples"
+        ]
+      },
+      {
+        "group": "Help",
+        "pages": ["troubleshooting"]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/dennis-nw/still200-integration-guide"
+    }
+  }
+}

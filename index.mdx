@@ -1,0 +1,27 @@
+---
+title: "Still200 documentation"
+description: "Monitor HTTP services and scheduled jobs, and get notified when they fail."
+icon: "wave-pulse"
+---
+
+Still200 watches the work your systems are expected to do and alerts you when it stops happening.
+
+<CardGroup cols={2}>
+  <Card title="Monitor an HTTP service" icon="globe" href="/http-monitoring/overview">
+    Let Still200 poll a public health endpoint and track your service and its dependencies.
+  </Card>
+  <Card title="Monitor a scheduled job" icon="clock" href="/scheduled-jobs/overview">
+    Have cron jobs, backups, and pipelines report when they start, finish, or fail.
+  </Card>
+</CardGroup>
+
+## Choose a monitor type
+
+| Monitor | How it works | Best for |
+| --- | --- | --- |
+| HTTP | Still200 sends requests to your health endpoint. | APIs, websites, and always-on services |
+| Scheduled job | Your job sends lifecycle pings to Still200. | Cron jobs, backups, ETL tasks, and CI workflows |
+
+<Tip>
+  Start with the [quickstart](/quickstart) if you are unsure which monitor fits your workload.
+</Tip>

@@ -1,0 +1,76 @@
+---
+title: "Scheduled job examples"
+description: "Instrument shell and Python jobs safely."
+icon: "code"
+---
+
+## Shell
+
+Use a trap so failures report even when the job exits early:
+
+```bash
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+: "${STILL200_PING_TOKEN:?STILL200_PING_TOKEN must be set}"
+readonly STILL200_API_URL="https://api.still200.com"
+
+report_failure() {
+  local exit_code=$?
+  curl --silent --show-error --request POST \
+    "$STILL200_API_URL/jobs/ping/fail" \
+    --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
+    --header 'Content-Type: application/json' \
+    --data "{\"error_message\":\"Job exited with code $exit_code\"}" || true
+  exit "$exit_code"
+}
+
+trap report_failure ERR
+
+curl --fail --silent --show-error --request POST \
+  "$STILL200_API_URL/jobs/ping/start" \
+  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+
+./run-backup.sh
+
+curl --fail --silent --show-error --request POST \
+  "$STILL200_API_URL/jobs/ping/finish" \
+  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+```
+
+## Python
+
+```python
+import os
+
+import httpx
+
+BASE_URL = "https://api.still200.com/jobs/ping"
+PING_TOKEN = os.environ["STILL200_PING_TOKEN"]
+HEADERS = {"Still200-Ping-Token": PING_TOKEN}
+
+
+def run_job() -> None:
+    with httpx.Client(timeout=10) as client:
+        client.post(f"{BASE_URL}/start", headers=HEADERS).raise_for_status()
+
+        try:
+            perform_work()
+        except Exception as exc:
+            client.post(
+                f"{BASE_URL}/fail",
+                headers=HEADERS,
+                json={"error_message": str(exc)},
+            ).raise_for_status()
+            raise
+        else:
+            client.post(f"{BASE_URL}/finish", headers=HEADERS).raise_for_status()
+
+
+if __name__ == "__main__":
+    run_job()
+```
+
+<Tip>
+  Give ping requests their own short timeout. Monitoring should report the job without making the job wait indefinitely on the monitoring service.
+</Tip>

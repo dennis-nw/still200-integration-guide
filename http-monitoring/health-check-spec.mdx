@@ -1,0 +1,64 @@
+---
+title: "Health-check specification"
+description: "The request and response contract for HTTP monitors."
+icon: "file-code"
+---
+
+## Endpoint requirements
+
+- **Method:** `GET`
+- **Content type:** `application/json`
+- **Status code:** `200`
+- **Accessibility:** reachable from the public internet
+- **Timeout:** responds within 5 seconds
+
+Return `200` even when an internal dependency is unhealthy. Still200 reads dependency health from the JSON body. Network errors, non-200 responses, timeouts, invalid JSON, and invalid response shapes count as failed polls.
+
+## Response fields
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `service_name` | string | Yes | Human-readable service name. |
+| `checks` | object | No | Map of dependency names to check results. `{}` is valid. |
+| `checks[name].latency_ms` | number | No | Dependency latency in milliseconds. |
+| `checks[name].error` | string | No | Human-readable failure detail. |
+
+## Status derivation
+
+| Condition | Derived status |
+| --- | --- |
+| `error` has a value | `unhealthy` |
+| No error and `latency_ms` is above 1,000 | `degraded` |
+| Any other valid result | `healthy` |
+
+The worst dependency status becomes the monitor's overall result. A degraded result is recorded but does not open an incident.
+
+## Validate an endpoint
+
+```bash
+curl -X POST https://api.still200.com/monitors/validate \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://example.com/health"}'
+```
+
+A valid dependency-aware response looks like:
+
+```json
+{
+  "service_name": "billing-api",
+  "status": "healthy",
+  "status_code": 200,
+  "checks": {
+    "postgres": {
+      "status": "healthy",
+      "latency_ms": 42.7,
+      "error": null
+    }
+  },
+  "error": null
+}
+```
+
+<Note>
+  In the validation response, `checks: {}` means the endpoint explicitly reported no dependency checks. `checks: null` means Still200 could not determine the checks; inspect `error` for the reason.
+</Note>
