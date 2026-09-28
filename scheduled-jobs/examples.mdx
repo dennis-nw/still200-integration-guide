@@ -1,6 +1,6 @@
 ---
 title: "Scheduled job examples"
-description: "Instrument shell and Python jobs safely."
+description: "Instrument shell jobs, Python jobs, and scheduled AI agent loops safely."
 icon: "code"
 ---
 
@@ -70,6 +70,70 @@ def run_job() -> None:
 if __name__ == "__main__":
     run_job()
 ```
+
+## AI agent loops
+
+A scheduled agent — one that triages new tickets every 15 minutes, or summarizes the day's errors each night — fails in the same quiet ways as any cron job, plus a few of its own:
+
+- It **never starts**, because the scheduler, container, or credentials broke.
+- It **errors out**: a provider outage, a rate limit, or a tool call that raised.
+- It **never finishes**, stuck retrying a tool or looping without converging.
+
+Monitor it by reporting one Still200 run per scheduled invocation of the agent, not one per model call or step. Cap the loop yourself so a runaway agent fails loudly, and include the useful context in the failure payload:
+
+```python
+import os
+
+import httpx
+
+BASE_URL = "https://api.still200.com/jobs/ping"
+PING_TOKEN = os.environ["STILL200_PING_TOKEN"]
+HEADERS = {"Still200-Ping-Token": PING_TOKEN}
+
+MAX_STEPS = 25
+
+
+class StepLimitExceeded(Exception):
+    pass
+
+
+def run_agent() -> None:
+    with httpx.Client(timeout=10) as client:
+        client.post(f"{BASE_URL}/start", headers=HEADERS).raise_for_status()
+
+        steps = 0
+        try:
+            state = load_pending_work()
+            while not state.done:
+                if steps >= MAX_STEPS:
+                    raise StepLimitExceeded(f"Agent did not finish within {MAX_STEPS} steps")
+                # One model call plus any tool calls it requests.
+                state = agent_step(state)
+                steps += 1
+        except Exception as exc:
+            client.post(
+                f"{BASE_URL}/fail",
+                headers=HEADERS,
+                json={
+                    "error_message": str(exc)[:2000],
+                    "payload": {"steps": steps, "error_type": type(exc).__name__},
+                },
+            ).raise_for_status()
+            raise
+        else:
+            client.post(f"{BASE_URL}/finish", headers=HEADERS).raise_for_status()
+
+
+if __name__ == "__main__":
+    run_agent()
+```
+
+`load_pending_work` and `agent_step` stand in for your agent framework — the monitoring pattern is the same whatever you build the agent with.
+
+When you create the monitor:
+
+- Set the **cron expression** to the agent's schedule, for example `*/15 * * * *`. Occurrences must be at least five minutes apart, so agents that loop continuously or pick their own next run need a fixed cadence to be monitored.
+- Set a **maximum runtime** a little above the agent's longest normal run. A step limit only helps while your code is still running; the maximum runtime catches the run that hangs outright, such as a tool call that never returns.
 
 <Tip>
   Give ping requests their own short timeout. Monitoring should report the job without making the job wait indefinitely on the monitoring service.

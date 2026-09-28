@@ -1,6 +1,6 @@
 ---
 title: "Scheduled-job monitoring"
-description: "Monitor cron jobs, backups, pipelines, and recurring tasks."
+description: "Monitor cron jobs, backups, pipelines, AI agent loops, and recurring tasks."
 icon: "clock"
 ---
 
@@ -24,6 +24,8 @@ Still200 detects three failure modes:
 - **Missed:** no start ping arrived by the scheduled time plus its grace period.
 - **Failed:** the job called the fail endpoint.
 - **Timed out:** the job started but sent no terminal ping before its configured maximum runtime.
+
+The same model works for AI agents that run on a schedule. Treat each scheduled invocation of the agent as one job run, and Still200 will catch an agent that never starts, errors out, or gets stuck looping past its maximum runtime. See the [AI agent loop example](/scheduled-jobs/examples#ai-agent-loops).
 
 <CardGroup cols={2}>
   <Card title="Configure a schedule" icon="calendar" href="/scheduled-jobs/configure" />
