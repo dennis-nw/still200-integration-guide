@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting"
-description: "Resolve common HTTP and scheduled-job integration problems."
+description: "Resolve common monitoring and webhook integration problems."
 icon: "wrench"
 ---
 
@@ -35,3 +35,17 @@ The process did not send a finish or fail ping. Configure a maximum runtime so S
 ### The job was marked missed but ran later
 
 Send the start ping when the retry begins. Still200 can reopen the missed occurrence as `running`, resolve its missed-run incident, and record it as `late` after a successful finish.
+
+## Webhooks
+
+### A delivery keeps retrying
+
+Still200 acknowledges only `2xx` responses. Inspect the delivery log for the latest status code and error, confirm the endpoint is publicly reachable over HTTPS, and keep its response time below ten seconds.
+
+### Signature verification fails
+
+Compute the HMAC from the exact raw request bytes before parsing JSON. Use the timestamp from the `Still200-Webhook-Signature` header and sign `<timestamp>.<raw-body>` with the endpoint's signing secret.
+
+### A test event triggered production behavior
+
+Test deliveries use real event types so they exercise your normal routing. Check `test` in the payload or `Still200-Webhook-Test: true` before performing production actions.

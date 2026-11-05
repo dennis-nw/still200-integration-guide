@@ -1,0 +1,98 @@
+---
+title: "Verify signatures"
+description: "Authenticate Still200 webhook requests and prevent replay attacks."
+icon: "shield-check"
+---
+
+Every delivery has a `Still200-Webhook-Signature` header:
+
+```http
+Still200-Webhook-Signature: t=1793867400,v1=123abc...
+```
+
+`t` is a Unix timestamp and `v1` is a hexadecimal HMAC-SHA256 digest. Still200 computes it from:
+
+```text
+<timestamp>.<raw-request-body>
+```
+
+Verify the signature before parsing or acting on the event.
+
+<Steps>
+  <Step title="Read the raw body">
+    Preserve the exact request bytes. Re-serializing parsed JSON changes whitespace and produces a different signature.
+  </Step>
+  <Step title="Check the timestamp">
+    Reject timestamps outside a short tolerance, such as five minutes, to prevent captured requests from being replayed later.
+  </Step>
+  <Step title="Compute the digest">
+    Sign `<timestamp>.<raw-body>` with the endpoint's `s200_whsec_...` secret and HMAC-SHA256.
+  </Step>
+  <Step title="Compare safely">
+    Use a constant-time comparison against any `v1` value in the header.
+  </Step>
+</Steps>
+
+## Python
+
+```python
+import hashlib
+import hmac
+import time
+
+
+def verify_still200_webhook(raw_body: bytes, header: str, secret: str) -> None:
+    try:
+        timestamp_part, signature_part = header.split(",", 1)
+        if not timestamp_part.startswith("t=") or not signature_part.startswith("v1="):
+            raise ValueError
+        timestamp = int(timestamp_part.removeprefix("t="))
+        signature = signature_part.removeprefix("v1=")
+    except (AttributeError, ValueError) as exc:
+        raise ValueError("Malformed Still200 signature")
+    if abs(int(time.time()) - timestamp) > 300:
+        raise ValueError("Stale Still200 signature")
+
+    signed_payload = str(timestamp).encode() + b"." + raw_body
+    expected = hmac.new(
+        secret.encode(), signed_payload, hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(signature, expected):
+        raise ValueError("Invalid Still200 signature")
+```
+
+## Node.js
+
+```javascript
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+export function verifyStill200Webhook(rawBody, header, secret) {
+  const [timestampPart, signaturePart] = header.split(",", 2);
+  if (!timestampPart?.startsWith("t=") || !signaturePart?.startsWith("v1=")) {
+    throw new Error("Malformed signature");
+  }
+  const timestamp = timestampPart?.replace("t=", "");
+  const signature = signaturePart?.replace("v1=", "");
+
+  if (!timestamp || !signature) throw new Error("Malformed signature");
+  if (Math.abs(Math.floor(Date.now() / 1000) - Number(timestamp)) > 300) {
+    throw new Error("Stale signature");
+  }
+
+  const expected = createHmac("sha256", secret)
+    .update(`${timestamp}.`)
+    .update(rawBody)
+    .digest("hex");
+
+  const expectedBytes = Buffer.from(expected);
+  const received = Buffer.from(signature);
+  const valid = received.length === expectedBytes.length &&
+    timingSafeEqual(received, expectedBytes);
+  if (!valid) throw new Error("Invalid signature");
+}
+```
+
+<Warning>
+  Read the raw body before JSON middleware transforms it. Framework-specific request helpers often return a parsed object that cannot be used for verification.
+</Warning>

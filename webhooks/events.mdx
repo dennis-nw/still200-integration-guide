@@ -1,0 +1,87 @@
+---
+title: "Events and payloads"
+description: "Understand webhook event types and the version 1 payload contract."
+icon: "brackets-curly"
+---
+
+Still200 currently sends two event types:
+
+| Event | Sent when |
+| --- | --- |
+| `incident.started` | A monitor is confirmed unhealthy and an incident opens. |
+| `incident.resolved` | The monitor recovers and its open incident resolves. |
+
+Endpoints receive only the event types selected in their configuration.
+
+## Incident started
+
+```json
+{
+  "version": "1",
+  "id": "incident.started/019a45f0-9c00-7000-8000-000000000001",
+  "type": "incident.started",
+  "created_at": "2026-11-05T08:30:00Z",
+  "test": false,
+  "data": {
+    "incident": {
+      "id": "019a45f0-9c00-7000-8000-000000000001",
+      "monitor_id": "019a45f0-9c00-7000-8000-000000000002",
+      "monitor_name": "Checkout API",
+      "context": {
+        "monitor_type": "http",
+        "url": "https://api.example.com/health",
+        "status_code": 503
+      },
+      "error_message": "Service unavailable",
+      "started_at": "2026-11-05T08:30:00Z",
+      "resolved_at": null,
+      "duration_seconds": null
+    }
+  }
+}
+```
+
+## Incident resolved
+
+Resolved events use the same structure with `type` set to `incident.resolved`. They include `resolved_at` and `duration_seconds`:
+
+```json
+{
+  "version": "1",
+  "id": "incident.resolved/019a45f0-9c00-7000-8000-000000000001",
+  "type": "incident.resolved",
+  "created_at": "2026-11-05T08:35:00Z",
+  "test": false,
+  "data": {
+    "incident": {
+      "id": "019a45f0-9c00-7000-8000-000000000001",
+      "monitor_id": "019a45f0-9c00-7000-8000-000000000002",
+      "monitor_name": "Checkout API",
+      "context": {
+        "monitor_type": "http",
+        "url": "https://api.example.com/health",
+        "status_code": 503
+      },
+      "error_message": "Service unavailable",
+      "started_at": "2026-11-05T08:30:00Z",
+      "resolved_at": "2026-11-05T08:35:00Z",
+      "duration_seconds": 300
+    }
+  }
+}
+```
+
+## Request headers
+
+Every delivery includes:
+
+| Header | Purpose |
+| --- | --- |
+| `Still200-Webhook-Id` | Stable event ID. Reused when a delivery is retried. |
+| `Still200-Webhook-Event` | Event type, such as `incident.started`. |
+| `Still200-Webhook-Signature` | Timestamp and HMAC signature. |
+| `Still200-Webhook-Test` | Present with value `true` for test deliveries. |
+
+<Info>
+  Still200 uses at-least-once delivery. Store the event `id` after successful processing and safely acknowledge duplicates with a `2xx` response.
+</Info>
