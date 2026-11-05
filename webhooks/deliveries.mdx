@@ -1,0 +1,59 @@
+---
+title: "Deliveries and retries"
+description: "Acknowledge deliveries, understand retries, and process events idempotently."
+icon: "rotate"
+---
+
+Still200 creates one delivery for each active endpoint subscribed to an event. A worker signs the JSON body and sends it as an HTTPS `POST` request.
+
+## Acknowledge a delivery
+
+Return any `2xx`, `200` ideally, response after the event has been safely processed:
+
+```http
+HTTP/1.1 200 OK
+```
+
+A timeout, network error, or non-`2xx` response marks the attempt unsuccessful. Still200 schedules another attempt with exponential backoff and records the latest status code, latency, and error in the delivery log.
+
+## Delivery statuses
+
+| Status | Meaning |
+| --- | --- |
+| `pending` | The delivery has not been attempted yet. |
+| `processing` | A worker has claimed the delivery and is sending it. |
+| `retrying` | An attempt failed and the delivery is waiting for its next retry time. |
+| `succeeded` | The endpoint returned a `2xx` response. |
+| `failed` | The delivery exhausted its allowed attempts. |
+
+Still200 retries failed requests with exponential backoff, up to five attempts by default.
+
+## Build an idempotent handler
+
+Network failures can happen after your endpoint processes an event but before Still200 receives its response. The resulting retry delivers the same event again.
+
+Use `Still200-Webhook-Id` or the payload `id` as an idempotency key:
+
+```python
+async def handle_webhook(event):
+    if await event_store.exists(event["id"]):
+        return 200
+
+    async with database.transaction():
+        await process_event(event)
+        await event_store.record(event["id"])
+
+    return 200
+```
+
+<Warning>
+    **Respond fast — but only once the event is safe.**
+    
+    Return 2xx as soon as the event is durably captured. That means either:
+    
+    - you've finished processing it, or
+    
+    - you've written it to your own reliable queue and can guarantee it won't be lost.
+    
+    Never return 2xx on the assumption that processing will succeed later. A 2xx is a promise that Still200 can stop retrying.
+</Warning>

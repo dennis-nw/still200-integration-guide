@@ -1,0 +1,46 @@
+---
+title: "Test a webhook"
+description: "Exercise your production event handler with a clearly marked test delivery."
+icon: "flask"
+---
+
+Send a test delivery from the webhook's page in the Still200 dashboard. Choose one of the event types enabled for that endpoint.
+
+Test deliveries travel through the normal delivery pipeline. They use the endpoint's real signing secret, are recorded in its delivery log, and follow the same retry behavior as production events.
+
+## Identify a test delivery
+
+Tests use the selected production event type, such as `incident.started`, so they exercise your real routing code. Still200 marks them in two places:
+
+```http
+Still200-Webhook-Test: true
+```
+
+```json
+{
+  "type": "incident.started",
+  "test": true
+}
+```
+
+Check either marker before performing production actions:
+
+```python
+if event.get("test"):
+    logger.info("Received a Still200 test event")
+    return
+
+handle_incident(event)
+```
+
+## Test failure behavior
+
+To confirm retries, temporarily return a non-`2xx` response from your test endpoint and inspect the delivery log. Restore a `2xx` response before the next attempt if you want the delivery to recover.
+
+For local development, expose a local receiver through an HTTPS tunnel:
+
+```bash
+cloudflared tunnel --url http://localhost:9000
+```
+
+Register the generated `https://...trycloudflare.com` URL as the destination. This exercises the same public HTTPS path used in production without relaxing endpoint security.
