@@ -1,60 +1,176 @@
 ---
 title: "Report job runs"
-description: "Send authenticated start, finish, and failure pings."
+description: "Monitor a job with the Python SDK or the lifecycle HTTP API."
 icon: "signal"
 ---
 
-All lifecycle endpoints use the same token header:
+Still200 needs three lifecycle signals from a scheduled job: when it starts, when it finishes successfully, and when it fails. Choose the integration that fits your job.
 
-```http
-Still200-Ping-Token: s200_pt_your-secret-token
-```
+<Note>
+  The Still200 SDK is currently available for **Python 3.12 and later**. SDKs for more languages are planned. Jobs written in any language can use the HTTP API directly.
+</Note>
 
-Missing or invalid tokens return `401 Unauthorized`. Keep the token in a secret store and avoid writing it to logs.
+<Tabs>
+  <Tab title="Python SDK">
+    The SDK is the quickest way to monitor a Python job. Its `@monitor()` decorator sends all three lifecycle signals for you while preserving the function's arguments, return value, and exception behavior.
 
-## Start a run
+    <Steps>
+      <Step title="Install the SDK">
+        <CodeGroup>
+          ```bash uv
+          uv add still200-sdk
+          ```
 
-Call the start endpoint immediately before doing the monitored work:
+          ```bash pip
+          pip install still200-sdk
+          ```
+        </CodeGroup>
+      </Step>
 
-```bash
-curl --fail --request POST https://api.still200.com/jobs/ping/start \
-  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
-```
+      <Step title="Store the ping token">
+        Copy the ping token generated when you create the monitor and add it to the job's environment.
+
+        ```bash
+        export STILL200_PING_TOKEN="s200_pt_your-secret-token"
+        ```
+
+        Keep the token in your deployment platform's secret store. Do not commit it to source control or include it directly in the script.
+      </Step>
+
+      <Step title="Decorate the job">
+        ```python
+        import asyncio
+
+        from still200_sdk import monitor
+
+
+        @monitor()
+        async def generate_report() -> None:
+            # Run the scheduled work.
+            ...
+
+
+        if __name__ == "__main__":
+            asyncio.run(generate_report())
+        ```
+
+        The same decorator works with synchronous functions:
+
+        ```python
+        from still200_sdk import monitor
+
+
+        @monitor()
+        def clean_expired_sessions() -> None:
+            # Run the scheduled work.
+            ...
+
+
+        if __name__ == "__main__":
+            clean_expired_sessions()
+        ```
+      </Step>
+    </Steps>
+
+    For each invocation, the SDK sends a start ping before calling the function, a finish ping when it returns, or a failure ping when it raises. Failure pings include the exception message, limited to 2,000 characters. Function arguments are never sent automatically because they may contain sensitive data.
+
+    If a monitoring request fails, the SDK logs the reporting error without changing the job's behavior: the job still runs, successful return values are preserved, and original exceptions are re-raised.
+
+    <CardGroup cols={2}>
+      <Card title="View on PyPI" icon="python" href="https://pypi.org/project/still200-sdk/" />
+      <Card title="SDK source" icon="github" href="https://github.com/dennis-nw/still200-sdk-python" />
+    </CardGroup>
+  </Tab>
+
+  <Tab title="HTTP API">
+    Use the lifecycle endpoints directly for any language or runtime. All three endpoints authenticate with the same header:
+
+    ```http
+    Still200-Ping-Token: s200_pt_your-secret-token
+    ```
+
+    Missing or invalid tokens return `401 Unauthorized`. Keep the token in a secret store and avoid writing it to logs.
+
+    <Steps>
+      <Step title="Report the start">
+        Call the start endpoint immediately before doing the monitored work:
+
+        ```bash
+        curl --fail --request POST https://api.still200.com/jobs/ping/start \
+          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+        ```
+      </Step>
+
+      <Step title="Run the job">
+        Perform the scheduled work only after sending the start ping. If the process exits without a terminal ping, the run remains `running` until it exceeds the monitor's maximum runtime.
+      </Step>
+
+      <Step title="Report the outcome">
+        Send `finish` only after the work completes successfully:
+
+        ```bash
+        curl --fail --request POST https://api.still200.com/jobs/ping/finish \
+          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+        ```
+
+        If the job fails, send a concise error message and optional structured diagnostics instead:
+
+        ```bash
+        curl --fail --request POST https://api.still200.com/jobs/ping/fail \
+          --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
+          --header 'Content-Type: application/json' \
+          --data '{
+            "error_message": "Database backup upload failed",
+            "payload": {
+              "bucket": "nightly-backups",
+              "attempt": 3
+            }
+          }'
+        ```
+      </Step>
+    </Steps>
+
+    `error_message` is optional and limited to 2,000 characters. `payload` accepts a JSON object. If no message is supplied, Still200 records a generic failure message.
+  </Tab>
+</Tabs>
+
+## Start and retry behavior
 
 A start ping is accepted up to 60 seconds before the expected time. A repeated start ping is safe: while a run is already active, Still200 returns that same run instead of creating another one.
 
-If a run was already marked missed, a later start may recover that missed occurrence. Its incident resolves when the start arrives, and a successful finish records the run as `late`.
+If a run was already marked missed, a later start may recover that missed occurrence. Its incident resolves after the retried run finishes successfully, and Still200 records the run as `late`.
 
-## Finish a run
-
-Call the finish endpoint only after the work completes successfully:
-
-```bash
-curl --fail --request POST https://api.still200.com/jobs/ping/finish \
-  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
-```
-
-The endpoint returns `409 Conflict` when the monitor has no running job to finish.
-
-## Fail a run
-
-If the work raises an error, report a concise message and optional structured diagnostics:
-
-```bash
-curl --fail --request POST https://api.still200.com/jobs/ping/fail \
-  --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "error_message": "Database backup upload failed",
-    "payload": {
-      "bucket": "nightly-backups",
-      "attempt": 3
-    }
-  }'
-```
-
-`error_message` is optional and limited to 2,000 characters. `payload` accepts a JSON object. If no message is supplied, Still200 records a generic failure message.
+The finish and fail endpoints return `409 Conflict` when the monitor has no running job to complete.
 
 <Warning>
-  A process that exits without sending `finish` or `fail` remains `running`. Configure a maximum runtime if you want Still200 to turn that condition into a `timed_out` incident.
+  Configure a maximum runtime for every job. It lets Still200 turn a run that starts but never reports `finish` or `fail` into a `timed_out` incident.
 </Warning>
+
+## Multiple Python jobs
+
+For separate scripts or processes, give each process its own `STILL200_PING_TOKEN` value:
+
+```bash
+STILL200_PING_TOKEN="report-token" python report_job.py
+STILL200_PING_TOKEN="cleanup-token" python cleanup_job.py
+```
+
+If multiple monitored jobs run in the same process, load a separate secret for each one and pass it explicitly:
+
+```python
+import os
+
+from still200_sdk import monitor
+
+
+@monitor(ping_token=os.environ["REPORT_JOB_PING_TOKEN"])
+def generate_report() -> None:
+    ...
+
+
+@monitor(ping_token=os.environ["CLEANUP_JOB_PING_TOKEN"])
+def clean_expired_sessions() -> None:
+    ...
+```
+
+An explicit `ping_token` takes precedence over `STILL200_PING_TOKEN`.

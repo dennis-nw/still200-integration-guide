@@ -1,6 +1,6 @@
 ---
 title: "Scheduled job examples"
-description: "Instrument shell jobs, Python jobs, and scheduled AI agent loops safely."
+description: "Monitor shell jobs, Python jobs, and scheduled AI agent loops safely."
 icon: "code"
 ---
 
@@ -38,38 +38,24 @@ curl --fail --silent --show-error --request POST \
   --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
 ```
 
-## Python
+## Python SDK
+
+Add `@monitor()` to a synchronous or asynchronous scheduled function. The SDK reads `STILL200_PING_TOKEN` from the environment and reports the complete run lifecycle.
 
 ```python
-import os
-
-import httpx
-
-BASE_URL = "https://api.still200.com/jobs/ping"
-PING_TOKEN = os.environ["STILL200_PING_TOKEN"]
-HEADERS = {"Still200-Ping-Token": PING_TOKEN}
+from still200_sdk import monitor
 
 
+@monitor()
 def run_job() -> None:
-    with httpx.Client(timeout=10) as client:
-        client.post(f"{BASE_URL}/start", headers=HEADERS).raise_for_status()
-
-        try:
-            perform_work()
-        except Exception as exc:
-            client.post(
-                f"{BASE_URL}/fail",
-                headers=HEADERS,
-                json={"error_message": str(exc)},
-            ).raise_for_status()
-            raise
-        else:
-            client.post(f"{BASE_URL}/finish", headers=HEADERS).raise_for_status()
+    perform_work()
 
 
 if __name__ == "__main__":
     run_job()
 ```
+
+If `perform_work()` raises, the SDK reports the exception message and then re-raises the original exception so your scheduler still sees the failure.
 
 ## AI agent loops
 
@@ -79,16 +65,10 @@ A scheduled agent — one that triages new tickets every 15 minutes, or summariz
 - It **errors out**: a provider outage, a rate limit, or a tool call that raised.
 - It **never finishes**, stuck retrying a tool or looping without converging.
 
-Monitor it by reporting one Still200 run per scheduled invocation of the agent, not one per model call or step. Cap the loop yourself so a runaway agent fails loudly, and include the useful context in the failure payload:
+Monitor it by reporting one Still200 run per scheduled invocation of the agent, not one per model call or step. Cap the loop yourself so a runaway agent fails loudly with a useful exception message:
 
 ```python
-import os
-
-import httpx
-
-BASE_URL = "https://api.still200.com/jobs/ping"
-PING_TOKEN = os.environ["STILL200_PING_TOKEN"]
-HEADERS = {"Still200-Ping-Token": PING_TOKEN}
+from still200_sdk import monitor
 
 MAX_STEPS = 25
 
@@ -97,31 +77,16 @@ class StepLimitExceeded(Exception):
     pass
 
 
+@monitor()
 def run_agent() -> None:
-    with httpx.Client(timeout=10) as client:
-        client.post(f"{BASE_URL}/start", headers=HEADERS).raise_for_status()
-
-        steps = 0
-        try:
-            state = load_pending_work()
-            while not state.done:
-                if steps >= MAX_STEPS:
-                    raise StepLimitExceeded(f"Agent did not finish within {MAX_STEPS} steps")
-                # One model call plus any tool calls it requests.
-                state = agent_step(state)
-                steps += 1
-        except Exception as exc:
-            client.post(
-                f"{BASE_URL}/fail",
-                headers=HEADERS,
-                json={
-                    "error_message": str(exc)[:2000],
-                    "payload": {"steps": steps, "error_type": type(exc).__name__},
-                },
-            ).raise_for_status()
-            raise
-        else:
-            client.post(f"{BASE_URL}/finish", headers=HEADERS).raise_for_status()
+    state = load_pending_work()
+    steps = 0
+    while not state.done:
+        if steps >= MAX_STEPS:
+            raise StepLimitExceeded(f"Agent did not finish within {MAX_STEPS} steps")
+        # One model call plus any tool calls it requests.
+        state = agent_step(state)
+        steps += 1
 
 
 if __name__ == "__main__":
@@ -136,5 +101,5 @@ When you create the monitor:
 - Set a **maximum runtime** a little above the agent's longest normal run. A step limit only helps while your code is still running; the maximum runtime catches the run that hangs outright, such as a tool call that never returns.
 
 <Tip>
-  Give ping requests their own short timeout. Monitoring should report the job without making the job wait indefinitely on the monitoring service.
+  For non-Python agents, open [Report job runs](/scheduled-jobs/report-runs), choose the **HTTP API** tab, and wrap those lifecycle requests around the same bounded loop.
 </Tip>

@@ -47,17 +47,23 @@ Choose the path that matches the workload you want to monitor.
         ```
       </Step>
       <Step title="Report the run">
-        Send `start` before the work and `finish` only after it succeeds.
+        For Python 3.12+, install the SDK and decorate the scheduled function. The SDK reports starts, successful finishes, and failures automatically.
 
         ```bash
-        curl --fail --request POST https://api.still200.com/jobs/ping/start \
-          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
-
-        ./your-job
-
-        curl --fail --request POST https://api.still200.com/jobs/ping/finish \
-          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+        uv add still200-sdk
         ```
+
+        ```python
+        from still200_sdk import monitor
+
+
+        @monitor()
+        def run_job() -> None:
+            # Your scheduled work
+            ...
+        ```
+
+        Using another language? Open [Report job runs](/scheduled-jobs/report-runs) and choose the **HTTP API** tab. SDKs for more languages are planned.
       </Step>
     </Steps>
   </Tab>
@@ -65,5 +71,5 @@ Choose the path that matches the workload you want to monitor.
 
 <CardGroup cols={2}>
   <Card title="HTTP health-check contract" icon="file-code" href="/http-monitoring/health-check-spec" />
-  <Card title="Scheduled-job pings" icon="signal" href="/scheduled-jobs/report-runs" />
+  <Card title="Integrate a scheduled job" icon="signal" href="/scheduled-jobs/report-runs" />
 </CardGroup>
