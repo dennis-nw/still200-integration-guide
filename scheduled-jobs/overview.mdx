@@ -6,6 +6,8 @@ icon: "clock"
 
 Scheduled-job monitoring reverses the HTTP-monitoring flow: your job reports its lifecycle to Still200. Still200 already knows when the job should run from its cron schedule, so a missing start ping becomes a missed run.
 
+For Python jobs, the [Still200 SDK](/scheduled-jobs/report-runs) wraps this lifecycle in a decorator. Jobs in any language can send the same signals through the manual HTTP integration on that page. Python is the first supported SDK language, with more language SDKs planned.
+
 ```mermaid
 sequenceDiagram
     participant Job
@@ -29,5 +31,5 @@ The same model works for AI agents that run on a schedule. Treat each scheduled 
 
 <CardGroup cols={2}>
   <Card title="Configure a schedule" icon="calendar" href="/scheduled-jobs/configure" />
-  <Card title="Report runs" icon="signal" href="/scheduled-jobs/report-runs" />
+  <Card title="Integrate your job" icon="signal" href="/scheduled-jobs/report-runs" />
 </CardGroup>
