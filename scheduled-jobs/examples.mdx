@@ -6,7 +6,7 @@ icon: "code"
 
 ## Shell
 
-Use a trap so failures report even when the job exits early:
+Use Bash and `jq` to capture the run ID. Install the error trap after the start ping succeeds so it can report failures for that run.
 
 ```bash
 #!/usr/bin/env bash
@@ -20,22 +20,25 @@ report_failure() {
   curl --silent --show-error --request POST \
     "$STILL200_API_URL/jobs/ping/fail" \
     --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
+    --header "Still200-Run-Id: $RUN_ID" \
     --header 'Content-Type: application/json' \
     --data "{\"error_message\":\"Job exited with code $exit_code\"}" || true
   exit "$exit_code"
 }
 
-trap report_failure ERR
-
-curl --fail --silent --show-error --request POST \
+RUN_ID=$(curl --fail --silent --show-error --request POST \
   "$STILL200_API_URL/jobs/ping/start" \
-  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+  --header "Still200-Ping-Token: $STILL200_PING_TOKEN" |
+  jq -er '.id | strings | select(length > 0)')
 
+trap report_failure ERR
 ./run-backup.sh
+trap - ERR
 
 curl --fail --silent --show-error --request POST \
   "$STILL200_API_URL/jobs/ping/finish" \
-  --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+  --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
+  --header "Still200-Run-Id: $RUN_ID"
 ```
 
 ## Python SDK

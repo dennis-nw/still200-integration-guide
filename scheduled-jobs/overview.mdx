@@ -13,11 +13,12 @@ sequenceDiagram
     participant Job
     participant Still200
     Job->>Still200: POST /jobs/ping/start
+    Still200-->>Job: Run ID (id)
     Note over Job: Perform work
     alt work succeeds
-        Job->>Still200: POST /jobs/ping/finish
+        Job->>Still200: POST /jobs/ping/finish with Still200-Run-Id
     else work fails
-        Job->>Still200: POST /jobs/ping/fail
+        Job->>Still200: POST /jobs/ping/fail with Still200-Run-Id
     end
 ```
 

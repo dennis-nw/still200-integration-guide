@@ -18,11 +18,11 @@ Still200 needs three lifecycle signals from a scheduled job: when it starts, whe
       <Step title="Install the SDK">
         <CodeGroup>
           ```bash uv
-          uv add still200-sdk
+          uv add 'still200-sdk>=0.2.0'
           ```
 
           ```bash pip
-          pip install still200-sdk
+          pip install 'still200-sdk>=0.2.0'
           ```
         </CodeGroup>
       </Step>
@@ -74,6 +74,24 @@ Still200 needs three lifecycle signals from a scheduled job: when it starts, whe
 
     For each invocation, the SDK sends a start ping before calling the function, a finish ping when it returns, or a failure ping when it raises. Failure pings include the exception message, limited to 2,000 characters. Function arguments are never sent automatically because they may contain sensitive data.
 
+    The SDK captures the run ID from the start response and sends it automatically with the finish or failure ping. To use the ID in your own logs or records, call `get_current_run_id()` from inside your decorated function. It returns a UUID.
+
+    ```python
+    from still200_sdk import NoActiveRunError, get_current_run_id, monitor
+
+
+    @monitor()
+    def generate_report() -> None:
+        try:
+            print(f"Still200 run: {get_current_run_id()}")
+        except NoActiveRunError:
+            pass  # Monitoring is unavailable, so continue the job.
+
+        # Run the scheduled work.
+    ```
+
+    Use `get_current_run()` to access the run object, whose `.id` is the same UUID. Both accessors raise `NoActiveRunError` when no run is available, including when the start ping fails.
+
     If a monitoring request fails, the SDK logs the reporting error without changing the job's behavior: the job still runs, successful return values are preserved, and original exceptions are re-raised.
 
     <CardGroup cols={2}>
@@ -93,11 +111,14 @@ Still200 needs three lifecycle signals from a scheduled job: when it starts, whe
 
     <Steps>
       <Step title="Report the start">
-        Call the start endpoint immediately before doing the monitored work:
+        Call the start endpoint immediately before doing the monitored work. Save the response's `id` field as the run ID. This shell example uses `jq` to read it.
 
         ```bash
-        curl --fail --request POST https://api.still200.com/jobs/ping/start \
-          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+        set -o pipefail
+        RUN_ID=$(curl --fail --silent --show-error --request POST \
+          https://api.still200.com/jobs/ping/start \
+          --header "Still200-Ping-Token: $STILL200_PING_TOKEN" |
+          jq -er '.id | strings | select(length > 0)') || exit 1
         ```
       </Step>
 
@@ -106,11 +127,12 @@ Still200 needs three lifecycle signals from a scheduled job: when it starts, whe
       </Step>
 
       <Step title="Report the outcome">
-        Send `finish` only after the work completes successfully:
+        Send `finish` after the work completes successfully. Both outcome endpoints require the original ping token and the run ID from that execution's start response.
 
         ```bash
         curl --fail --request POST https://api.still200.com/jobs/ping/finish \
-          --header "Still200-Ping-Token: $STILL200_PING_TOKEN"
+          --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
+          --header "Still200-Run-Id: $RUN_ID"
         ```
 
         If the job fails, send a concise error message and optional structured diagnostics instead:
@@ -118,6 +140,7 @@ Still200 needs three lifecycle signals from a scheduled job: when it starts, whe
         ```bash
         curl --fail --request POST https://api.still200.com/jobs/ping/fail \
           --header "Still200-Ping-Token: $STILL200_PING_TOKEN" \
+          --header "Still200-Run-Id: $RUN_ID" \
           --header 'Content-Type: application/json' \
           --data '{
             "error_message": "Database backup upload failed",
@@ -136,11 +159,11 @@ Still200 needs three lifecycle signals from a scheduled job: when it starts, whe
 
 ## Start and retry behavior
 
-A start ping is accepted up to 60 seconds before the expected time. A repeated start ping is safe: while a run is already active, Still200 returns that same run instead of creating another one.
+A start ping is accepted up to 60 seconds before the expected time. Before the next occurrence enters that window, a repeated start ping returns the latest run if it is still running. Once the next occurrence enters the window, Still200 can start a new run even if the previous one is still active. Keep each execution's returned ID with that execution.
 
 If a run was already marked missed, a later start may recover that missed occurrence. Its incident resolves after the retried run finishes successfully, and Still200 records the run as `late`.
 
-The finish and fail endpoints return `409 Conflict` when the monitor has no running job to complete.
+The finish and fail endpoints return `409 Conflict` if the supplied run ID does not identify a running job for the monitor authenticated by the ping token.
 
 <Warning>
   Configure a maximum runtime for every job. It lets Still200 turn a run that starts but never reports `finish` or `fail` into a `timed_out` incident.
