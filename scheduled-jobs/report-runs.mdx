@@ -6,6 +6,8 @@ icon: "signal"
 
 Still200 needs three lifecycle signals from a scheduled job: when it starts, when it finishes successfully, and when it fails. Choose the integration that fits your job.
 
+Scheduled runs can overlap. Still200 returns a run ID from `/start` so each finish or failure ping updates the execution that sent it, even when several runs share the same monitor and ping token. The Python SDK sends the run ID for you and makes it available for your logs or records. With the HTTP API, save the ID from each start response and send it with that run's outcome.
+
 <Note>
   The Still200 SDK is currently available for **Python 3.12 and later**. SDKs for more languages are planned. Jobs written in any language can use the HTTP API directly.
 </Note>
