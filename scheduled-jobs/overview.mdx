@@ -6,18 +6,21 @@ icon: "clock"
 
 Scheduled-job monitoring reverses the HTTP-monitoring flow: your job reports its lifecycle to Still200. Still200 already knows when the job should run from its cron schedule, so a missing start ping becomes a missed run.
 
-For Python jobs, the [Still200 SDK](/scheduled-jobs/report-runs) wraps this lifecycle in a decorator. Jobs in any language can send the same signals through the manual HTTP integration on that page. Python is the first supported SDK language, with more language SDKs planned.
+Still200 can track multiple runs of the same job at the same time. If a backup runs every five minutes and the 10:00 backup is still running at 10:05, the next scheduled run can start with its own ID. When either run finishes or fails, its ID tells Still200 which run to update, even if the newer run finishes first.
+
+For Python jobs, the [Still200 SDK](/scheduled-jobs/report-runs) wraps this lifecycle in a decorator and carries the run ID automatically. Jobs in any language can send the same signals through the manual HTTP integration on that page. Python is the first supported SDK language, with more language SDKs planned.
 
 ```mermaid
 sequenceDiagram
     participant Job
     participant Still200
     Job->>Still200: POST /jobs/ping/start
+    Still200-->>Job: Run ID (id)
     Note over Job: Perform work
     alt work succeeds
-        Job->>Still200: POST /jobs/ping/finish
+        Job->>Still200: POST /jobs/ping/finish with Still200-Run-Id
     else work fails
-        Job->>Still200: POST /jobs/ping/fail
+        Job->>Still200: POST /jobs/ping/fail with Still200-Run-Id
     end
 ```
 
